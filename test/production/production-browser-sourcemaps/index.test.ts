@@ -99,6 +99,21 @@ describe('Production browser sourcemaps', () => {
           }
         }
       })
+
+      it('only emits source map files when enabled', async () => {
+        const staticFiles = await recursiveReadDir(
+          path.join(next.testDir, '.next', 'static')
+        )
+        const mapFiles = staticFiles.filter((file) => file.endsWith('.map'))
+
+        if (productionBrowserSourceMaps) {
+          expect(mapFiles).not.toBeEmpty()
+        } else {
+          // Unlike the per-chunk check above, this also catches source maps that
+          // no emitted file points to, e.g. one for a worker entrypoint.
+          expect(mapFiles).toEqual([])
+        }
+      })
     }
   )
 })
