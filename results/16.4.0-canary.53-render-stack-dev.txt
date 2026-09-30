@@ -1,0 +1,4 @@
+3169 history.replaceState
+3180 render, params.status=undefined, stack: workLoopSync < renderRootSync < performWorkOnRoot < performWorkOnRootViaSchedulerTask < MessagePort.performWorkUntilDeadline
+3190 render, params.status=undefined, stack: workLoopConcurrentByScheduler < renderRootConcurrent < performWorkOnRoot < performWorkOnRootViaSchedulerTask < MessagePort.performWorkUntilDeadline
+3191 render, params.status=fulfilled, stack: renderRootConcurrent < performWorkOnRoot < performWorkOnRootViaSchedulerTask < MessagePort.performWorkUntilDeadline

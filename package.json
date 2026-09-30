@@ -1,0 +1,21 @@
+{
+  "name": "next-cache-components-url-write-blank",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "repro": "node run.mjs",
+    "use-next": "node use-next.mjs",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "drive": "node drive.mjs"
+  },
+  "dependencies": {
+    "next": "16.4.0-canary.53",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "playwright": "1.57.0"
+  }
+}

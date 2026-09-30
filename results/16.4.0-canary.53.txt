@@ -1,0 +1,37 @@
+next 16.4.0-canary.53, react 19.2.4, node v22.22.0
+===== cacheComponents: true =====
+┌─────────┬───────────────────────────────────────────┬──────────────┬───────────┬───────────────┬─────────────┬───────────────┐
+│ (index) │ route                                     │ replaceState │ pushState │ click handler │ typed "abc" │ input focused │
+├─────────┼───────────────────────────────────────────┼──────────────┼───────────┼───────────────┼─────────────┼───────────────┤
+│ 0       │ 'client page, use(params)'                │ '301 ms'     │ '301 ms'  │ '300 ms'      │ '"a"'       │ false         │
+│ 1       │ 'client page, use(searchParams)'          │ '300 ms'     │ '300 ms'  │ '300 ms'      │ '"a"'       │ false         │
+│ 2       │ 'client layout, use(params)'              │ '301 ms'     │ '301 ms'  │ '300 ms'      │ '"a"'       │ false         │
+│ 3       │ 'control: useParams()'                    │ 'none'       │ 'none'    │ 'none'        │ '"abc"'     │ true          │
+│ 4       │ 'control: server page awaits params'      │ 'none'       │ 'none'    │ 'none'        │ '"abc"'     │ true          │
+│ 5       │ 'control: server page passes its promise' │ 'none'       │ 'none'    │ 'none'        │ '"abc"'     │ true          │
+└─────────┴───────────────────────────────────────────┴──────────────┴───────────┴───────────────┴─────────────┴───────────────┘
+┌─────────┬───────────────────────────────────────┬──────────┐
+│ (index) │ plain React, fresh promise per render │ blank    │
+├─────────┼───────────────────────────────────────┼──────────┤
+│ 0       │ 'update in a transition'              │ 'none'   │
+│ 1       │ 'ordinary update'                     │ '300 ms' │
+└─────────┴───────────────────────────────────────┴──────────┘
+routes that blanked, dropped typing or lost focus: 3 of 6
+===== cacheComponents: false =====
+┌─────────┬───────────────────────────────────────────┬──────────────┬───────────┬───────────────┬─────────────┬───────────────┐
+│ (index) │ route                                     │ replaceState │ pushState │ click handler │ typed "abc" │ input focused │
+├─────────┼───────────────────────────────────────────┼──────────────┼───────────┼───────────────┼─────────────┼───────────────┤
+│ 0       │ 'client page, use(params)'                │ 'none'       │ 'none'    │ 'none'        │ '"abc"'     │ true          │
+│ 1       │ 'client page, use(searchParams)'          │ 'none'       │ 'none'    │ 'none'        │ '"abc"'     │ true          │
+│ 2       │ 'client layout, use(params)'              │ 'none'       │ 'none'    │ 'none'        │ '"abc"'     │ true          │
+│ 3       │ 'control: useParams()'                    │ 'none'       │ 'none'    │ 'none'        │ '"abc"'     │ true          │
+│ 4       │ 'control: server page awaits params'      │ 'none'       │ 'none'    │ 'none'        │ '"abc"'     │ true          │
+│ 5       │ 'control: server page passes its promise' │ 'none'       │ 'none'    │ 'none'        │ '"abc"'     │ true          │
+└─────────┴───────────────────────────────────────────┴──────────────┴───────────┴───────────────┴─────────────┴───────────────┘
+┌─────────┬───────────────────────────────────────┬──────────┐
+│ (index) │ plain React, fresh promise per render │ blank    │
+├─────────┼───────────────────────────────────────┼──────────┤
+│ 0       │ 'update in a transition'              │ 'none'   │
+│ 1       │ 'ordinary update'                     │ '301 ms' │
+└─────────┴───────────────────────────────────────┴──────────┘
+routes that blanked, dropped typing or lost focus: 0 of 6
