@@ -1,0 +1,166 @@
+# Runs the JS test matrix of build_and_test.yml on GitHub-hosted runners, for
+# branches of a fork that has no access to the larger runners, the remote
+# cache or the test timings. Not meant to be merged.
+#
+# Differences from build_and_test.yml:
+# - The native binary is the published one for the version in
+#   packages/next/package.json instead of one built from the commit, so the
+#   branch should be based on a release commit and not change any Rust code.
+# - Tests are sharded round-robin into more, smaller groups.
+# - Skipped: Rust, rspack, Windows, Firefox/Safari, React 18 and deploy tests.
+name: fork-ci
+
+on:
+  push:
+    branches: ['ci/**']
+
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: 22
+  NEXT_TELEMETRY_DISABLED: 1
+  NEXT_SKIP_NATIVE_POSTINSTALL: 1
+  NEXT_JUNIT_TEST_REPORT: 'true'
+  NEXT_TEST_JOB: 1
+  NEXT_TEST_PREFER_OFFLINE: 1
+  NEXT_TURBOPACK_IO_CONCURRENCY: 64
+  BASELINE_BROWSER_MAPPING_IGNORE_OLD_DATA: 1
+  RUST_BACKTRACE: 0
+  TEST_CONCURRENCY: 2
+
+jobs:
+  test:
+    name: ${{ matrix.suite }} ${{ matrix.group }}/1
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    strategy:
+      fail-fast: false
+      matrix:
+        suite:
+          - turbopack-dev
+          - turbopack-prod
+          - webpack-dev
+          - webpack-prod
+          - cache-components-dev
+          - cache-components-prod
+        group: [1]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 25
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - run: |
+          npm i -g corepack@0.31
+          corepack enable
+          corepack prepare --activate yarn@1.22.19
+      - name: Set CI git user
+        run: |
+          git config --global user.name "fork-ci"
+          git config --global user.email "fork-ci@example.com"
+      - run: pnpm install
+      - name: Install the published native binary
+        run: |
+          version="$(node -p "require('./packages/next/package.json').version")"
+          mkdir -p /tmp/next-swc packages/next-swc/native
+          npm pack "@next/swc-linux-x64-gnu@${version}" --pack-destination /tmp/next-swc
+          tar -xzf /tmp/next-swc/*.tgz -C /tmp/next-swc
+          cp /tmp/next-swc/package/next-swc.linux-x64-gnu.node packages/next-swc/native/
+      - run: pnpm playwright install --only-shell chromium
+      - run: pnpm build
+      - name: Run tests
+        env:
+          SUITE: ${{ matrix.suite }}
+          GROUP: ${{ matrix.group }}/1
+        run: |
+          export __NEXT_EXPERIMENTAL_STRICT_ROUTE_TYPES=true
+          case "$SUITE" in
+            turbopack-dev)
+              export IS_TURBOPACK_TEST=1 TURBOPACK_DEV=1 NEXT_TEST_MODE=dev
+              type=development ;;
+            turbopack-prod)
+              export IS_TURBOPACK_TEST=1 TURBOPACK_BUILD=1 NEXT_TEST_MODE=start
+              type=production ;;
+            webpack-dev)
+              export IS_WEBPACK_TEST=1 NEXT_TEST_MODE=dev
+              type=development ;;
+            webpack-prod)
+              export IS_WEBPACK_TEST=1 NEXT_TEST_MODE=start
+              type=production ;;
+            cache-components-dev | cache-components-prod)
+              unset __NEXT_EXPERIMENTAL_STRICT_ROUTE_TYPES
+              export __NEXT_CACHE_COMPONENTS=true __NEXT_TEST_AXIS=A
+              export __NEXT_EXPERIMENTAL_CACHED_NAVIGATIONS=true
+              export __NEXT_EXPERIMENTAL_SERVER_COMPONENTS_HMR_CANCELLATION=true
+              export NEXT_EXTERNAL_TESTS_FILTERS="test/cache-components-tests-manifest.json"
+              export IS_TURBOPACK_TEST=1
+              if [ "$SUITE" = cache-components-dev ]; then
+                export TURBOPACK_DEV=1 NEXT_TEST_MODE=dev
+                type=development
+              else
+                export TURBOPACK_BUILD=1 NEXT_TEST_MODE=start
+                type=production
+              fi ;;
+          esac
+
+          # To only run some test files, e.g. to compare failures against the
+          # base commit, list them in .github/fork-ci/<suite>.txt.
+          only=".github/fork-ci/${SUITE}.txt"
+          if [ -d .github/fork-ci ]; then
+            if [ -s "$only" ]; then
+              node run-tests.js -g "$GROUP" $(cat "$only")
+            else
+              echo "Nothing listed for ${SUITE}"
+            fi
+          else
+            node run-tests.js -g "$GROUP" --type "$type"
+          fi
+
+  checks:
+    name: ${{ matrix.check }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [lint]
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 25
+          persist-credentials: false
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          package-manager-cache: false
+      - run: |
+          npm i -g corepack@0.31
+          corepack enable
+      - run: pnpm install
+      - name: Install the published native binary
+        run: |
+          version="$(node -p "require('./packages/next/package.json').version")"
+          mkdir -p /tmp/next-swc packages/next-swc/native
+          npm pack "@next/swc-linux-x64-gnu@${version}" --pack-destination /tmp/next-swc
+          tar -xzf /tmp/next-swc/*.tgz -C /tmp/next-swc
+          cp /tmp/next-swc/package/next-swc.linux-x64-gnu.node packages/next-swc/native/
+      - run: pnpm build
+      - name: Run check
+        env:
+          CHECK: ${{ matrix.check }}
+        run: |
+          case "$CHECK" in
+            unit)
+              node run-tests.js --type unit ;;
+            lint)
+              pnpm lint-no-typescript
+              pnpm validate-externals-doc
+              pnpm generate-browser-variant-aliases
+              git diff --exit-code ;;
+            types-and-precompiled)
+              pnpm types-and-precompiled ;;
+          esac
