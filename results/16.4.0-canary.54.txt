@@ -1,0 +1,31 @@
+next 16.4.0-canary.54, react 19.2.4, node v22.22.0
+
+===== cacheComponents: true =====
+┌─────────┬──────────────────────────────────────────────────┬──────────────────────────────────────┬─────────────────────┬────────────┬─────────────┬─────────┐
+│ (index) │ case                                             │ click                                │ url after           │ h1 after   │ main thread │ result  │
+├─────────┼──────────────────────────────────────────────────┼──────────────────────────────────────┼─────────────────────┼────────────┼─────────────┼─────────┤
+│ 0       │ 'redirect()'                                     │ '/ -> /throws-redirect'              │ '/'                 │ 'home'     │ '100% busy' │ 'STUCK' │
+│ 1       │ 'notFound()'                                     │ '/ -> /throws-not-found'             │ '/'                 │ 'home'     │ '100% busy' │ 'STUCK' │
+│ 2       │ 'throw new Error()'                              │ '/ -> /throws-error'                 │ '/'                 │ 'home'     │ '100% busy' │ 'STUCK' │
+│ 3       │ 'redirect(), same dynamic route, prefetch off'   │ '/same-route/1 -> /same-route/moved' │ '/same-route/1'     │ 'item 1'   │ '100% busy' │ 'STUCK' │
+│ 4       │ 'control: nothing thrown'                        │ '/ -> /control-no-throw'             │ '/control-no-throw' │ 'no throw' │ '0% busy'   │ 'ok'    │
+│ 5       │ 'control: redirect() under <Suspense>'           │ '/ -> /control-suspense/redirect'    │ '/target'           │ 'target'   │ '0% busy'   │ 'ok'    │
+│ 6       │ 'control: redirect() under loading.jsx'          │ '/ -> /control-loading/redirect'     │ '/target'           │ 'target'   │ '0% busy'   │ 'ok'    │
+│ 7       │ 'control: redirect(), other route, prefetch off' │ '/ -> /control-no-prefetch'          │ '/target'           │ 'target'   │ '0% busy'   │ 'ok'    │
+└─────────┴──────────────────────────────────────────────────┴──────────────────────────────────────┴─────────────────────┴────────────┴─────────────┴─────────┘
+clicks that went nowhere: 4 of 8
+
+===== cacheComponents: false =====
+┌─────────┬──────────────────────────────────────────────────┬──────────────────────────────────────┬─────────────────────┬─────────────────┬─────────────┬────────┐
+│ (index) │ case                                             │ click                                │ url after           │ h1 after        │ main thread │ result │
+├─────────┼──────────────────────────────────────────────────┼──────────────────────────────────────┼─────────────────────┼─────────────────┼─────────────┼────────┤
+│ 0       │ 'redirect()'                                     │ '/ -> /throws-redirect'              │ '/target'           │ 'target'        │ '0% busy'   │ 'ok'   │
+│ 1       │ 'notFound()'                                     │ '/ -> /throws-not-found'             │ '/throws-not-found' │ 'not-found.jsx' │ '0% busy'   │ 'ok'   │
+│ 2       │ 'throw new Error()'                              │ '/ -> /throws-error'                 │ '/throws-error'     │ 'error.jsx'     │ '0% busy'   │ 'ok'   │
+│ 3       │ 'redirect(), same dynamic route, prefetch off'   │ '/same-route/1 -> /same-route/moved' │ '/target'           │ 'target'        │ '0% busy'   │ 'ok'   │
+│ 4       │ 'control: nothing thrown'                        │ '/ -> /control-no-throw'             │ '/control-no-throw' │ 'no throw'      │ '0% busy'   │ 'ok'   │
+│ 5       │ 'control: redirect() under <Suspense>'           │ '/ -> /control-suspense/redirect'    │ '/target'           │ 'target'        │ '0% busy'   │ 'ok'   │
+│ 6       │ 'control: redirect() under loading.jsx'          │ '/ -> /control-loading/redirect'     │ '/target'           │ 'target'        │ '0% busy'   │ 'ok'   │
+│ 7       │ 'control: redirect(), other route, prefetch off' │ '/ -> /control-no-prefetch'          │ '/target'           │ 'target'        │ '0% busy'   │ 'ok'   │
+└─────────┴──────────────────────────────────────────────────┴──────────────────────────────────────┴─────────────────────┴─────────────────┴─────────────┴────────┘
+clicks that went nowhere: 0 of 8

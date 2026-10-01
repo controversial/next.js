@@ -1,0 +1,6 @@
+node_modules
+.next
+.next-off
+package-lock.json
+AGENTS.md
+next-env.d.ts

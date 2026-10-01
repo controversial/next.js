@@ -1,0 +1,24 @@
+next 16.4.0-canary.54, bundled react-dom 19.3.0-canary-8b0da1c6-20260922
+cacheComponents: false, / -> /throws-redirect
+url after 3 s: /target
+log lines in the third second: 0
+each useDeferredValue line belongs to the render or retry printed under it
+
+render       [lane1] -> completed   (pending [lane1 transition2])
+COMMIT       [lane1]
+render       [transition2] -> SUSPENDED AT THE SHELL   (pending [transition2 deferred2])
+render       [deferred2] -> SUSPENDED AT THE SHELL   (pending [transition2 deferred2])
+render       [transition2] -> ERRORED   (pending [transition2 deferred2])
+  sync retry [transition2 deferred2] -> ERRORED
+COMMIT       [transition2 deferred2]
+render       [transition3] -> SUSPENDED AT THE SHELL   (pending [transition3 deferred4])
+render       [deferred4] -> completed   (pending [transition3 deferred4])
+COMMIT       [deferred4]
+render       [transition3] -> SUSPENDED AT THE SHELL   (pending [transition3])
+    useDeferredValue(real, shell) returns the shell
+render       [transition3] -> completed   (pending [transition3])
+COMMIT       [transition3]
+render       [lane5] -> completed   (pending [lane5 deferred1])
+COMMIT       [lane5]
+render       [deferred1] -> completed   (pending [deferred1])
+COMMIT       [deferred1]

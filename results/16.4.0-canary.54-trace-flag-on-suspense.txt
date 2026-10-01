@@ -1,0 +1,35 @@
+next 16.4.0-canary.54, bundled react-dom 19.3.0-canary-8b0da1c6-20260922
+cacheComponents: true, / -> /control-suspense/redirect
+url after 3 s: /target
+log lines in the third second: 0
+each useDeferredValue line belongs to the render or retry printed under it
+
+render       [lane1] -> completed   (pending [lane1 transition2])
+COMMIT       [lane1]
+    useDeferredValue(real, shell) returns the shell
+render       [transition2] -> suspended   (pending [transition2])
+COMMIT       [transition2]
+    useDeferredValue(real, shell) returns the real response
+render       [deferred3] -> completed   (pending [deferred3 lane29])
+COMMIT       [deferred3]
+render       [lane29] -> completed   (pending [lane29])
+COMMIT       [lane29]
+    useDeferredValue(real, shell) returns the real response
+render       [lane22] -> ERRORED   (pending [lane22])
+    useDeferredValue(real, shell) returns the real response
+  sync retry [lane22] -> ERRORED
+COMMIT       [lane22]
+render       [transition3] -> SUSPENDED AT THE SHELL   (pending [transition3])
+    useDeferredValue(real, shell) returns the shell
+render       [transition3] -> completed   (pending [transition3])
+COMMIT       [transition3]
+render       [lane5] -> completed   (pending [lane5 deferred4 lane29])
+COMMIT       [lane5]
+render       [deferred4] -> completed   (pending [deferred4 lane29])
+COMMIT       [deferred4]
+    useDeferredValue(real, shell) returns the shell
+render       [lane29] -> completed   (pending [lane29])
+COMMIT       [lane29]
+    useDeferredValue(real, shell) returns the real response
+render       [lane29] -> ERRORED   (pending [lane29])
+COMMIT       [lane29]
