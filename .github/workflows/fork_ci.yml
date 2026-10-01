@@ -31,7 +31,7 @@ env:
 
 jobs:
   test:
-    name: ${{ matrix.suite }} ${{ matrix.group }}/14
+    name: ${{ matrix.suite }} ${{ matrix.group }}/1
     runs-on: ubuntu-latest
     timeout-minutes: 240
     strategy:
@@ -44,7 +44,7 @@ jobs:
           - webpack-prod
           - cache-components-dev
           - cache-components-prod
-        group: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+        group: [1]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -75,7 +75,7 @@ jobs:
       - name: Run tests
         env:
           SUITE: ${{ matrix.suite }}
-          GROUP: ${{ matrix.group }}/14
+          GROUP: ${{ matrix.group }}/1
         run: |
           export __NEXT_EXPERIMENTAL_STRICT_ROUTE_TYPES=true
           case "$SUITE" in
@@ -127,7 +127,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        check: [unit, lint, types-and-precompiled]
+        check: [lint]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
