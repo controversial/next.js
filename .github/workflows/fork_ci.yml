@@ -31,20 +31,15 @@ env:
 
 jobs:
   test:
-    name: ${{ matrix.suite }} ${{ matrix.group }}/1
+    name: ${{ matrix.suite }} repeat ${{ matrix.group }}
     runs-on: ubuntu-latest
     timeout-minutes: 240
     strategy:
       fail-fast: false
       matrix:
         suite:
-          - turbopack-dev
-          - turbopack-prod
           - webpack-dev
-          - webpack-prod
-          - cache-components-dev
-          - cache-components-prod
-        group: [1]
+        group: [1, 2, 3, 4, 5, 6, 7, 8]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -71,11 +66,12 @@ jobs:
           tar -xzf /tmp/next-swc/*.tgz -C /tmp/next-swc
           cp /tmp/next-swc/package/next-swc.linux-x64-gnu.node packages/next-swc/native/
       - run: pnpm playwright install --only-shell chromium
+      - run: lscpu | grep -E 'Model name|^CPU\(s\)'
       - run: pnpm build
       - name: Run tests
         env:
           SUITE: ${{ matrix.suite }}
-          GROUP: ${{ matrix.group }}/1
+          GROUP: 1/1
         run: |
           export __NEXT_EXPERIMENTAL_STRICT_ROUTE_TYPES=true
           case "$SUITE" in

@@ -1,1 +1,4 @@
-test/e2e/app-dir/blocking-route-errors-after-prefetch/blocking-route-errors-after-prefetch.test.ts
+test/development/acceptance-app/ReactRefreshLogBox.test.ts
+test/development/acceptance/hydration-error.test.ts
+test/development/app-dir/app-page-entry-prefetch-performance/app-page-entry-prefetch-performance.test.ts
+test/development/app-dir/cache-components-dev-warmup/cache-components.dev-warmup.with-prefetch-config.initial-load.partial-prefetching.test.ts
