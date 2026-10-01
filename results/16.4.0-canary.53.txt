@@ -1,4 +1,4 @@
-next 16.4.0-canary.54, react 19.2.4, node v22.22.0
+next 16.4.0-canary.53, react 19.2.4, node v22.22.0
 
 ===== cacheComponents: true =====
 Route (app)
@@ -13,6 +13,38 @@ Route (app)
 │ └ ◐ /params-only/[id]
 ├   /same-route/[id]
 │ └ ◐ /same-route/[id]
+├ ○ /target
+├ ƒ /throws-error
+├ ƒ /throws-not-found
+└ ƒ /throws-redirect
+
+┌─────────┬────────────────────────────────────────────────────────┬──────────────────────────────────────────────┬─────────────────────┬────────────┬─────────────┬─────────┐
+│ (index) │ case                                                   │ click                                        │ url after           │ h1 after   │ main thread │ result  │
+├─────────┼────────────────────────────────────────────────────────┼──────────────────────────────────────────────┼─────────────────────┼────────────┼─────────────┼─────────┤
+│ 0       │ 'redirect()'                                           │ '/ -> /throws-redirect'                      │ '/'                 │ 'home'     │ '100% busy' │ 'STUCK' │
+│ 1       │ 'notFound()'                                           │ '/ -> /throws-not-found'                     │ '/'                 │ 'home'     │ '100% busy' │ 'STUCK' │
+│ 2       │ 'throw new Error()'                                    │ '/ -> /throws-error'                         │ '/'                 │ 'home'     │ '100% busy' │ 'STUCK' │
+│ 3       │ 'redirect(), same dynamic route, prefetch off'         │ '/same-route/1 -> /same-route/moved'         │ '/same-route/1'     │ 'item 1'   │ '100% busy' │ 'STUCK' │
+│ 4       │ 'redirect() in <Suspense>, under a layout that blocks' │ '/ -> /blocking-layout/redirect-in-suspense' │ '/'                 │ 'home'     │ '100% busy' │ 'STUCK' │
+│ 5       │ 'notFound(), route only awaits params'                 │ '/params-only/1 -> /params-only/missing'     │ '/params-only/1'    │ 'params 1' │ '100% busy' │ 'STUCK' │
+│ 6       │ 'control: nothing thrown'                              │ '/ -> /control-no-throw'                     │ '/control-no-throw' │ 'no throw' │ '0% busy'   │ 'ok'    │
+│ 7       │ 'control: redirect() under <Suspense>'                 │ '/ -> /control-suspense/redirect'            │ '/target'           │ 'target'   │ '0% busy'   │ 'ok'    │
+│ 8       │ 'control: redirect() under loading.jsx'                │ '/ -> /control-loading/redirect'             │ '/target'           │ 'target'   │ '0% busy'   │ 'ok'    │
+│ 9       │ 'control: redirect(), other route, prefetch off'       │ '/ -> /control-no-prefetch'                  │ '/target'           │ 'target'   │ '0% busy'   │ 'ok'    │
+└─────────┴────────────────────────────────────────────────────────┴──────────────────────────────────────────────┴─────────────────────┴────────────┴─────────────┴─────────┘
+clicks that went nowhere: 6 of 10
+
+===== cacheComponents: false =====
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /blocking-layout/redirect-in-suspense
+├ ƒ /control-loading/redirect
+├ ƒ /control-no-prefetch
+├ ƒ /control-no-throw
+├ ƒ /control-suspense/redirect
+├ ƒ /params-only/[id]
+├ ƒ /same-route/[id]
 ├ ○ /target
 ├ ƒ /throws-error
 ├ ƒ /throws-not-found

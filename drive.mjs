@@ -12,6 +12,8 @@ const cases = [
   ["notFound()", "/", "/throws-not-found", "/throws-not-found", "not-found.jsx"],
   ["throw new Error()", "/", "/throws-error", "/throws-error", "error.jsx"],
   ["redirect(), same dynamic route, prefetch off", "/same-route/1", "/same-route/moved", "/target", "target"],
+  ["redirect() in <Suspense>, under a layout that blocks", "/", "/blocking-layout/redirect-in-suspense", "/target", "target"],
+  ["notFound(), route only awaits params", "/params-only/1", "/params-only/missing", "/params-only/missing", "not-found.jsx"],
   ["control: nothing thrown", "/", "/control-no-throw", "/control-no-throw", "no throw"],
   ["control: redirect() under <Suspense>", "/", "/control-suspense/redirect", "/target", "target"],
   ["control: redirect() under loading.jsx", "/", "/control-loading/redirect", "/target", "target"],

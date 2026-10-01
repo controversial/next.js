@@ -1,0 +1,39 @@
+next 16.4.0-canary.54, bundled react-dom 19.3.0-canary-8b0da1c6-20260922
+cacheComponents: true, / -> /blocking-layout/redirect-in-suspense
+url after 3 s: /
+log lines in the third second: 2595
+each useDeferredValue line belongs to the render or retry printed under it
+
+render       [lane1] -> completed   (pending [lane1 transition2])
+COMMIT       [lane1]
+    useDeferredValue(real, shell) returns the shell
+render       [transition2] -> SUSPENDED AT THE SHELL   (pending [transition2 deferred3])
+    useDeferredValue(real, shell) returns the real response
+render       [deferred3] -> SUSPENDED AT THE SHELL   (pending [transition2 deferred3])
+    useDeferredValue(real, shell) returns the real response
+    useDeferredValue(real, shell) returns the real response
+render       [deferred3] -> ERRORED   (pending [transition2 deferred3])
+    useDeferredValue(real, shell) returns the shell
+  sync retry [transition2 deferred3] -> SUSPENDED AT THE SHELL
+    useDeferredValue(real, shell) returns the real response
+    useDeferredValue(real, shell) returns the real response
+render       [deferred4] -> ERRORED   (pending [transition2 deferred3 deferred4])
+    useDeferredValue(real, shell) returns the shell
+  sync retry [transition2 deferred3 deferred4] -> SUSPENDED AT THE SHELL
+    useDeferredValue(real, shell) returns the real response
+    useDeferredValue(real, shell) returns the real response
+render       [deferred1] -> ERRORED   (pending [transition2 deferred1 deferred3 deferred4])
+    useDeferredValue(real, shell) returns the shell
+  sync retry [transition2 deferred1 deferred3 deferred4] -> SUSPENDED AT THE SHELL
+    useDeferredValue(real, shell) returns the real response
+    useDeferredValue(real, shell) returns the real response
+render       [deferred2] -> ERRORED   (pending [transition2 deferred1 deferred2 deferred3 deferred4])
+    useDeferredValue(real, shell) returns the shell
+  sync retry [transition2 deferred1 deferred2 deferred3 deferred4] -> SUSPENDED AT THE SHELL
+    useDeferredValue(real, shell) returns the real response
+    useDeferredValue(real, shell) returns the real response
+render       [deferred3] -> ERRORED   (pending [transition2 deferred1 deferred2 deferred3 deferred4])
+    useDeferredValue(real, shell) returns the shell
+  sync retry [transition2 deferred1 deferred2 deferred3 deferred4] -> SUSPENDED AT THE SHELL
+    useDeferredValue(real, shell) returns the real response
+... 6886 more lines

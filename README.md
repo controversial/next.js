@@ -48,10 +48,14 @@ Each case gets a fresh browser context. The driver loads the start page, waits f
 | `notFound()` | `/` to `/throws-not-found` | `not-found.jsx` |
 | `throw new Error()` | `/` to `/throws-error` | `error.jsx` |
 | `redirect()`, same dynamic route, `prefetch={false}` | `/same-route/1` to `/same-route/moved` | `/target` |
+| `redirect()` inside `<Suspense>`, under a layout that awaits `cookies()` with no `<Suspense>` above it | `/` to `/blocking-layout/redirect-in-suspense` | `/target` |
+| `notFound()`, and the route awaits nothing but `params` | `/params-only/1` to `/params-only/missing` | `not-found.jsx` |
 | control: nothing thrown | `/` to `/control-no-throw` | the page |
 | control: `redirect()` under `<Suspense>` | `/` to `/control-suspense/redirect` | `/target` |
 | control: `redirect()` under `loading.jsx` | `/` to `/control-loading/redirect` | `/target` |
 | control: `redirect()`, other route, `prefetch={false}` | `/` to `/control-no-prefetch` | `/target` |
+
+The two cases after `/same-route` are shapes from the thread of [vercel/next.js#97898](https://github.com/vercel/next.js/issues/97898), rebuilt here: the reporter's `/dynamic-layout/redirect-suspense`, and the `notFound()` route from a later comment.
 
 ## Results
 
@@ -59,8 +63,9 @@ Production build, `next start`, headless Chromium, Linux x64, Node 22.22.0. Full
 
 | Next | `cacheComponents: true` | `cacheComponents: false` |
 | --- | --- | --- |
-| 16.3.8 (`latest` on 2026-10-01) | 4 of 8 clicks went nowhere | 0 of 8 |
-| 16.4.0-canary.54 (`canary` on 2026-10-01) | 4 of 8 clicks went nowhere | 0 of 8 |
+| 16.3.8 (`latest` on 2026-10-01) | 6 of 10 clicks went nowhere | 0 of 10 |
+| 16.4.0-canary.53 | 6 of 10 clicks went nowhere | 0 of 10 |
+| 16.4.0-canary.54 (`canary` on 2026-10-01) | 6 of 10 clicks went nowhere | 0 of 10 |
 
 Flag on, 16.4.0-canary.54:
 
@@ -70,6 +75,8 @@ Flag on, 16.4.0-canary.54:
 | `notFound()` | `/` | home | 100% busy | stuck |
 | `throw new Error()` | `/` | home | 100% busy | stuck |
 | `redirect()`, same dynamic route, prefetch off | `/same-route/1` | item 1 | 100% busy | stuck |
+| `redirect()` in `<Suspense>`, under a layout that blocks | `/` | home | 100% busy | stuck |
+| `notFound()`, route only awaits `params` | `/params-only/1` | params 1 | 100% busy | stuck |
 | control: nothing thrown | `/control-no-throw` | no throw | 0% busy | ok |
 | control: `redirect()` under `<Suspense>` | `/target` | target | 0% busy | ok |
 | control: `redirect()` under `loading.jsx` | `/target` | target | 0% busy | ok |
@@ -80,13 +87,18 @@ Flag on, 16.4.0-canary.54:
 All three must be true:
 
 1. **`cacheComponents` is on.**
-2. **No Suspense boundary or `loading.js` above the component that throws.**
+2. **The prefetched shell has a hole with no Suspense above it.** A hole is any part of the route that waits for the request. `loading.js` counts as Suspense. The hole doesn't have to be the component that throws:
+   - In `/throws-redirect` it is. The page awaits `cookies()` and then throws.
+   - In `/blocking-layout/redirect-in-suspense` the component that throws sits inside `<Suspense>`. The hole is the layout above it, which awaits `cookies()`.
+   - In `/params-only/[id]` the only thing awaited is `params`.
 3. **The browser already holds a static shell for that page.** It gets one from a default `<Link>` prefetch, or from a full page load of any URL of the same dynamic route. That is why `/same-route/moved` gets stuck with prefetch off and `/control-no-prefetch` doesn't.
+
+How `next build` labels the route doesn't decide it. `npm run repro` prints the route table. Four of the stuck routes build as `ƒ` (Dynamic). `/same-route/[id]` and `/params-only/[id]` build as `◐` (Partial Prerender), and so do the `<Suspense>` and `loading.jsx` controls, which work.
 
 Also checked by hand on canary.54 with the flag on:
 
-- A full page load of each of the four URLs ends where it should.
-- While the tab is stuck, clicking another link works and stops the loop.
+- A full page load of each of the six URLs ends where it should.
+- While the tab is stuck on `/`, clicking another link works and stops the loop.
 
 ## Cause
 
@@ -94,7 +106,7 @@ Read from the published 16.4.0-canary.54 package, which bundles `react-dom` 19.3
 
 With the flag on, Next renders a navigation in two passes: first the prefetched static shell, then the real server response. It does that with `useDeferredValue(real, shell)`.
 
-1. **The click's render gets the shell.** The shell has a hole where the request-time part goes. With no Suspense above, React can't finish that render, so its lane stays pending.
+1. **The click's render gets the shell.** The shell has a hole where the request-time part goes. With no Suspense above the hole, React can't finish that render, so its lane stays pending.
 2. **A deferred render gets the real response.** It reaches `redirect()`, which is a thrown error, and the redirect boundary catches it. The boundary navigates from an effect, so it needs this render to commit.
 3. **React doesn't commit a caught error straight away.** It retries once, synchronously, over every pending lane, and that includes the click's lane.
 4. **Because the click's lane is in the retry, `useDeferredValue` hands back the shell again.** The retry hits the hole and suspends with nothing to show.
@@ -102,7 +114,9 @@ With the flag on, Next renders a navigation in two passes: first the prefetched 
 
 With the flag off there is no shell for a request-time page, so both arguments are the real response. The retry throws the same redirect, React accepts the error as real and commits, and the effect navigates.
 
-With a new Suspense boundary above, the click's render commits with the fallback. Its lane is no longer pending when the error arrives, so the retry throws again and commits.
+With a new Suspense boundary above the hole, the click's render commits with the fallback. Its lane is no longer pending when the error arrives, so the retry throws again and commits.
+
+A Suspense boundary lower down doesn't help. In `/blocking-layout/redirect-in-suspense` each level of the route calls `useDeferredValue`. The deferred render gets the real response at both levels and reaches `redirect()`. The retry gets the shell at the layout's level, stops at that hole, and never reaches the page or its `<Suspense>` (`results/16.4.0-canary.54-trace-flag-on-blocking-layout.txt`).
 
 | What | Where (under `node_modules/next/dist`) |
 | --- | --- |
@@ -121,6 +135,7 @@ That last condition came in with [facebook/react#36911](https://github.com/faceb
 npm run trace                                   # flag on, / -> /throws-redirect
 npm run trace off                               # flag off, same click
 npm run trace on / /control-suspense/redirect   # any other click
+npm run trace on /params-only/1 /params-only/missing
 ```
 
 `trace.mjs` adds log lines to the bundled React's work loop, builds, clicks, prints the log and puts the file back. The added lines only log. Output for both versions is in `results/`. Each `useDeferredValue` line belongs to the render or retry printed under it. Flag on, from the click:
@@ -171,4 +186,6 @@ This path was checked by unpacking the published 16.4.0-canary.54 package, editi
 +const resolvedPrefetchRsc = renderTree.data.prefetchRsc !== null && !(renderTree.data.rsc !== null && typeof renderTree.data.rsc === "object" && renderTree.data.rsc.status === "fulfilled") ? renderTree.data.prefetchRsc : renderTree.data.rsc;
 ```
 
-With it the driver reports 0 of 8 (`results/16.4.0-canary.54-hand-edit.txt`). It is an experiment on built files that shows the switch works and backs up step 4. It has not been run against Next's test suite.
+With it the driver reports 0 of 10 (`results/16.4.0-canary.54-hand-edit.txt`). It is an experiment on built files that shows the switch works and backs up step 4. It has not been run against Next's test suite.
+
+The tarball path was checked with the branch [`fix/blocking-route-error-after-prefetch`](https://github.com/controversial/next.js/tree/fix/blocking-route-error-after-prefetch) of the same fork, at 8098f923, which sits on `v16.4.0-canary.53`. Fresh clone, `pnpm install`, `pnpm build`, `npm pack` in `packages/next`, then `npm run use-next` on the tarball. The driver reports 0 of 10 with the flag on and 0 of 10 with it off (`results/16.4.0-canary.53-patched.txt`). The published canary.53 gives 6 of 10 (`results/16.4.0-canary.53.txt`).

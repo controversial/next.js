@@ -20,6 +20,8 @@ for (const mode of modes) {
     console.error(build.stdout + build.stderr);
     process.exit(1);
   }
+  // The route table: ○ static, ◐ partial prerender, ƒ dynamic.
+  console.log(build.stdout.match(/^Route \(app\)\n(?:.+\n)+/m)?.[0] ?? "");
 
   const server = spawn(process.execPath, [next, "start", "-p", String(port)], { env, stdio: "ignore" });
   try {

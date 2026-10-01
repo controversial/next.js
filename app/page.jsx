@@ -4,6 +4,7 @@ const links = [
   "/throws-redirect",
   "/throws-not-found",
   "/throws-error",
+  "/blocking-layout/redirect-in-suspense",
   "/control-no-throw",
   "/control-suspense/redirect",
   "/control-loading/redirect",
@@ -25,6 +26,9 @@ export default function Home() {
       </p>
       <p>
         <a href="/same-route/1">/same-route/1 (full page load)</a>
+      </p>
+      <p>
+        <a href="/params-only/1">/params-only/1 (full page load)</a>
       </p>
     </main>
   );
